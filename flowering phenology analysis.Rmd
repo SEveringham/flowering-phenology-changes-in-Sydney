@@ -1,0 +1,811 @@
+---
+title: "FLowering phenology analysis"
+output: html_document
+---
+
+
+Libraries required
+```{r}
+library(ggplot2)
+library(dplyr)
+library(gridExtra)
+library(broom)
+library(ggforce)
+library(stringr)
+library(lubridate)
+library(metafor)
+```
+
+Read in data - this was stitched together in "cleaning data and initial plots.R"
+
+```{r}
+floweringdata <- read.csv("floweringdatafull.csv")
+```
+
+Get year and julian date from start of spring (July) as separate columns
+
+
+```{r}
+floweringdata$Year <- as.numeric(format(as.Date(floweringdata$datelong, format="%Y-%m-%d"), "%Y")) #this creates a column with just the year
+floweringdata$Truefloweringdate <- abs(yday(floweringdata$datelong)) #this creates a column with just the day of the year (from 1 to 366)
+
+## now we want to make our year start in June - so for every day that is before june, we want to add it to 366 so that it tacks on at the END of the season!!!
+
+#first create a column stating whether we need to add 366 days or zero days
+floweringdata$add366ornot <- ifelse(floweringdata$Truefloweringdate < 152, 366, 0)
+
+#then add them together!
+floweringdata$Dayofflowering <- floweringdata$Truefloweringdate + floweringdata$add366ornot
+
+```
+
+Subset only data showing FULL flowering
+
+```{r}
+FULLflowering <- subset(floweringdata, Binary=="1")
+```
+
+Run all lms on each species for their year vs flowering time 
+
+```{r}
+mylms <- FULLflowering %>%
+  group_by(Species) %>%
+  do(fit=lm(Dayofflowering ~ Year,.))
+
+mylmcoefs <- as.data.frame(tidy(mylms, fit))
+```
+
+Running a p-value correction due to multiple hypothesis testing - and then saving this as a csv file
+```{r}
+mylmcoefs$Pcorrected <- p.adjust(mylmcoefs$p.value, "holm")
+
+write.csv(mylmcoefs, "linearregressionfullfloweringresults.csv")
+```
+
+
+Now again for flowering inititaion
+
+Subset only data showing FULL flowering
+
+```{r}
+STARTflowering <- subset(floweringdata, Binary=="2")
+```
+
+Run all lms on each species for their year vs flowering time 
+
+```{r}
+mylmsstart <- STARTflowering %>%
+  group_by(Species) %>%
+  do(fit=lm(Dayofflowering ~ Year,.))
+
+mylmstartcoefs <- as.data.frame(tidy(mylmsstart, fit))
+```
+
+Running a p-value correction due to multiple hypothesis testing - and then saving this as a csv file
+```{r}
+mylmstartcoefs$Pcorrected <- p.adjust(mylmstartcoefs$p.value, "holm")
+
+write.csv(mylmstartcoefs, "linearregressionstartoffloweringresults.csv")
+```
+
+
+And all again for flowering end
+
+```{r}
+ENDflowering <- subset(floweringdata, Binary=="3")
+```
+
+Run all lms on each species for their year vs flowering time 
+
+```{r}
+mylmsend <- ENDflowering %>%
+  group_by(Species) %>%
+  do(fit=lm(Dayofflowering ~ Year,.))
+
+mylmendcoefs <- as.data.frame(tidy(mylmsend, fit))
+```
+
+Running a p-value correction due to multiple hypothesis testing - and then saving this as a csv file
+```{r}
+mylmendcoefs$Pcorrected <- p.adjust(mylmendcoefs$p.value, "holm")
+
+write.csv(mylmendcoefs, "linearregressionendoffloweringresults.csv")
+```
+
+
+FIGURE PLOTTING 
+
+1)Peak flowering plots (Figure 1)
+
+Function for graphs with significant relationships for peak flowering
+
+```{r}
+significantscatterplots <- function(Speciesname = "", value,...){
+  FULLflowering %>%
+    filter(str_detect(!!FULLflowering$Species, value)) %>%
+    ggplot(aes(x=Year, y=Dayofflowering)) +
+    geom_point(colour="lightsalmon2", size=5, alpha = 0.5) +
+    geom_smooth(method=lm, colour ="darkseagreen4", se=F, size=4) +
+    ggtitle(Speciesname) +
+    theme_classic() +
+    theme(plot.title = element_text(size = 35, face = "italic", hjust = 0.5)) +
+    theme(axis.text=element_blank(),
+          axis.title=element_blank()) +
+  coord_cartesian(xlim = c(1870, 2020), ylim = c(150, 517))
+}
+```
+
+Function for graphs without significant relationships for peak flowering 
+
+```{r}
+scatterplots <- function(Speciesname = "", value,...){
+  FULLflowering %>%
+    filter(str_detect(!!FULLflowering$Species, value)) %>%
+    ggplot(aes(x=Year, y=Dayofflowering)) +
+    geom_point(colour="lightsalmon2", size=5, alpha = 0.5) +
+    ggtitle(Speciesname) +
+    theme_classic() +
+    theme(plot.title = element_text(size = 35, face = "italic", hjust = 0.5)) +
+    theme(axis.text=element_blank(),
+          axis.title=element_blank()) +
+  coord_cartesian(xlim = c(1870, 2020), ylim = c(150, 517))
+}
+```
+
+
+Run each graph for each species :) 
+
+1. Graph all the species with significant relationships
+
+```{r}
+Callistemoncitrinus <- significantscatterplots(value = "Callistemon citrinus", Speciesname = "Callistemon citrinus")
+
+Notelaealongifolia <- significantscatterplots(value = "Notelaea longifolia", Speciesname = "Notelaea longifolia \n f. longifolia")
+
+Oleaeuropaea <- significantscatterplots(value = "Olea africana", Speciesname = "Olea europaea \n subsp. cuspidata")
+
+Leptospermumtrinervium <- significantscatterplots(value = "Leptospermum trinervium", Speciesname = "Leptospermum trinervium")
+
+Melaleucalinariifolia <- significantscatterplots(value = "Melaleuca linariifolia", Speciesname = "Melaleuca linariifolia")
+
+Ligustrumlucidum <- significantscatterplots(value = "Ligustrum lucidum", Speciesname = "Ligustrum lucidum")
+
+Clematisaristata <- significantscatterplots(value = "Clematis aristata", Speciesname = "Clematis aristata")
+
+Telopeaspeciosissima <- significantscatterplots(value = "Telopea speciosissima", Speciesname = "Telopea speciosissima")
+
+Acaciasaligna <- significantscatterplots(value = "Acacia saligna", Speciesname = "Acacia saligna")
+
+Kunzeacapitata <- significantscatterplots(value = "Kunzea capitata", Speciesname = "Kunzea capitata")
+
+Echinopogoncaespitosus <- significantscatterplots(value = "Echinopogon caespitosus", Speciesname = "Echinopogon caespitosus")
+
+Cotoneasterglaucophyllus <- significantscatterplots(value = "Cotoneaster glaucophyllus", Speciesname = "Cotoneaster glaucophyllus")
+
+
+```
+
+2. Graph all the species with non-singificant relationships
+
+```{r}
+Acaciaparramattensis <- scatterplots(value = "Acacia parramattensis", Speciesname = "Acacia parramattensis")
+
+Leucopogonmicrophyllus <- scatterplots(value = "Leucopogon microphyllus", Speciesname = "Leucopogon microphyllus")
+
+Droserapeltata <- scatterplots(value = "Drosera peltata", Speciesname = "Drosera peltata")
+
+Tetragonia <- scatterplots(value = "Tetragonia tetragonioides", Speciesname = "Tetragonia tetragonioides")
+
+Cyathochaetadiandra <- scatterplots(value = "Cyathochaeta diandra", Speciesname = "Cyathochaeta diandra")
+
+Anisopogonavenaceus <- scatterplots(value = "Anisopogon avenaceus", Speciesname = "Anisopogon avenaceus")
+
+Callicomaserratifolia <- scatterplots(value = "Callicoma serratifolia", Speciesname = "Callicoma serratifolia")
+
+Glochidionferd <- scatterplots(value = "Glochidion ferdinandi", Speciesname = "Glochidion ferdinandi")
+
+Pultenaeastipularis <- scatterplots(value = "Pultenaea stipularis", Speciesname = "Pultenaea stipularis")
+
+Ceratopetalumgummiferum <- scatterplots(value = "Ceratopetalum gummiferum", Speciesname = "Ceratopetalum gummiferum")
+
+Entolasiamarginata <- scatterplots(value = "Entolasia marginata", Speciesname = "Entolasia marginata")
+
+Acaciabinervia <- scatterplots(value = "Acacia binervia", Speciesname = "Acacia binervia")
+
+Ageratinaadenophora <- scatterplots(value = "Ageratina adenophora", Speciesname = "Ageratina adenophora")
+
+Angophorahispida <- scatterplots(value = "Angophora hispida", Speciesname = "Angophora hispida")
+
+Callistemonsalignus <- scatterplots(value = "Callistemon salignus", Speciesname = "Callistemon salignus")
+
+Micrantheumericoides <- scatterplots(value = "Micrantheum ericoides", Speciesname = "Micrantheum ericoides")
+
+Syncarpiaglomulifera <- scatterplots(value = "Syncarpia glomulifera", Speciesname = "Syncarpia glomulifera")
+
+Lonicerajaponica <- scatterplots(value = "Lonicera japonica", Speciesname = "Lonicera japonica")
+
+Viminariajuncea <- scatterplots(value = "Viminaria juncea", Speciesname = "Viminaria juncea")
+
+Angophoracostata <- scatterplots(value = "Angophora costata", Speciesname = "Angophora costata")
+
+
+Elaeocarpusreticulatus <- scatterplots(value = "Elaeocarpus reticulatus", Speciesname = "Elaeocarpus reticulatus")
+
+Solanumnigrum <- scatterplots(value = "Solanum nigrum", Speciesname = "Solanum nigrum")
+
+Cinnamomumcamphora <- scatterplots(value = "Cinnamomum camphora", Speciesname = "Cinnamomum camphora")
+
+Persoonialevis <- scatterplots(value = "Persoonia levis", Speciesname = "Persoonia levis")
+
+Bossiaeascolopendria <- scatterplots(value = "Bossiaea scolopendria", Speciesname = "Bossiaea scolopendria")
+```
+
+Stitch all the plots together to create Figure 1
+
+```{r}
+figure1 <- grid.arrange(Acaciasaligna, Ageratinaadenophora, Cinnamomumcamphora, Cotoneasterglaucophyllus, Ligustrumlucidum, Lonicerajaponica, Oleaeuropaea, Solanumnigrum, Acaciabinervia, Acaciaparramattensis, Angophoracostata, Angophorahispida, Anisopogonavenaceus, Bossiaeascolopendria, Callicomaserratifolia, Callistemoncitrinus, Callistemonsalignus, Ceratopetalumgummiferum, Clematisaristata, Cyathochaetadiandra, Droserapeltata, Echinopogoncaespitosus, Elaeocarpusreticulatus, Entolasiamarginata, Glochidionferd, Kunzeacapitata, Leptospermumtrinervium, Leucopogonmicrophyllus, Melaleucalinariifolia, Micrantheumericoides, Notelaealongifolia, Persoonialevis, Pultenaeastipularis, Syncarpiaglomulifera, Telopeaspeciosissima, Tetragonia, Viminariajuncea, ncol=4)
+
+#save plot
+
+ggsave("figure1.tiff",
+       plot= figure1, 
+       device = "tiff",
+       width = 23,
+       height = 44,
+       dpi = 100)
+```
+
+Pulling out some numbers for results section - species specific results that show the biology of my analysis
+
+1) Peak flowerng significant species
+```{r}
+#for clematis aristata
+Clematislm <- lm(Dayofflowering ~ Year, data = FULLflowering, subset = Species=="Clematis aristata")
+print(Clematislm)
+summary(Clematislm)
+
+#y =mx+b formula to get days of advancement per decade
+clematisdayin1960 = (-0.3156*1960) + 894.9744
+clematisdayin1950 = (-0.3156*1950) + 894.9744
+clematisdayin1960 - clematisdayin1950
+
+
+
+#for Notelaea longifolia
+Notealaealm <- lm(Dayofflowering ~ Year, data = FULLflowering, subset = Species=="Notelaea longifolia")
+print(Notealaealm)
+summary(Notealaealm)
+
+#y =mx+b formula to get days of advancement per decade
+notelaeadayin1960 = (-1.775*1960) + 3800.362 
+notelaeadayin1950 = (-1.775*1950) + 3800.362 
+notelaeadayin1960 - notelaeadayin1950
+
+
+
+#and for Acacia saligna
+Acaciasalignalm <- lm(Dayofflowering ~ Year, data = FULLflowering, subset = Species=="Acacia saligna")
+print(Acaciasalignalm)
+summary(Acaciasalignalm)
+
+#y =mx+b formula to get days of advancement per decade
+acaciasalignadayin1950 = (-0.2835*1950) + 824.3194
+acaciasalignadayin1960 = (-0.2835*1960) + 824.3194
+acaciasalignadayin1960 - acaciasalignadayin1950
+
+
+#and for ligustrum lucidum
+Ligustrumlucidumlm <- lm(Dayofflowering ~ Year, data = FULLflowering, subset = Species=="Ligustrum lucidum")
+print(Ligustrumlucidumlm)
+summary(Ligustrumlucidumlm)
+
+#y =mx+b formula to get days of advancement per decade
+ligustrumlucidumdayin1950 = (-0.4296*1950) + 1216.7412
+ligustrumlucidumdayin1960 = (-0.4296*1960) + 1216.7412
+ligustrumlucidumdayin1960 - ligustrumlucidumdayin1950
+
+#and for Callistemon citrinus (significantly delayed)
+
+Callistemoncitrinuslm <- lm(Dayofflowering ~ Year, data = FULLflowering, subset = Species=="Callistemon citrinus")
+print(Callistemoncitrinuslm)
+summary(Callistemoncitrinuslm)
+
+#y =mx+b formula to get days of advancement per decade
+callistemoncitrinusdayin1950 = (0.8653*1950) + -1409.5469
+callistemoncitrinusdayin1960 = (0.8653*1960) + -1409.5469
+callistemoncitrinusdayin1960 - callistemoncitrinusdayin1950
+
+
+#and for Olea europea subsp. cuspidata
+Oleaeuropaealm <- lm(Dayofflowering ~ Year, data = FULLflowering, subset = Species=="Olea africana")
+print(Oleaeuropaealm)
+summary(Oleaeuropaealm)
+
+#y =mx+b formula to get days of advancement per decade
+oleaeuropeadayin1950 = (0.4551*1950) + -585.0978 
+oleaeuropeadayin1960 = (0.4551*1960) + -585.0978 
+oleaeuropeadayin1960 - oleaeuropeadayin1950
+
+
+
+#and for Leptospermum trinervium (significantly delayed)
+Leptospermumtrilm <- lm(Dayofflowering ~ Year, data = FULLflowering, subset = Species=="Leptospermum trinervium")
+print(Leptospermumtrilm)
+summary(Leptospermumtrilm)
+
+#y =mx+b formula to get days of advancement per decade
+leptospermumdayin1950 = (0.2738*1950) + -251.2975 
+leptospermumdayin1960 = (0.2738*1960) + -251.2975 
+leptospermumdayin1960 - leptospermumdayin1950
+
+```
+
+2) Initiation of flowering
+
+```{r}
+#for notelea longifolia
+
+Notelealongiolialm <- lm(Dayofflowering ~ Year, data = STARTflowering, subset = Species == "Notelaea longifolia")
+print(Notelealongiolialm)
+summary(Notelealongiolialm)
+
+#y =mx+b formula to get days of advancement per decade
+notelaeadayin1950 = (-0.6059*1950) + 1420.2698
+notelaeadayin1960 = (-0.6059*1960) + 1420.2698
+notelaeadayin1960 - notelaeadayin1950
+
+
+
+# for persoonia levis
+
+Persoonialevislm <- lm(Dayofflowering ~ Year, data = STARTflowering, subset = Species == "Persoonia levis")
+print(Persoonialevislm)
+summary(Persoonialevislm)
+
+#y =mx+b formula to get days of advancement per decade
+persooniadayin1950 = (-1.781*1950) + 3850.041
+persooniadayin1960 = (-1.781*1960) + 3850.041
+persooniadayin1960 - persooniadayin1950
+
+
+
+#for callicoma serratifolia
+
+Callicomalm <- lm(Dayofflowering ~ Year, data = STARTflowering, subset = Species == "Callicoma serratifolia")
+print(Callicomalm)
+summary(Callicomalm)
+
+#y =mx+b formula to get days of advancement per decade
+callicomadayin1950 = (-0.2064*1950) + 684.0831
+callicomadayin1960 = (-0.2064*1960) + 684.0831
+callicomadayin1960 - callicomadayin1950
+
+
+# for Angophora hispida (delayed)
+
+Angophorahispidalm <- lm(Dayofflowering ~ Year, data = STARTflowering, subset = Species == "Angophora hispida")
+print(Angophorahispidalm)
+summary(Angophorahispidalm)
+
+#y =mx+b formula to get days of advancement per decade
+angophorahispidadayin1950 = (0.1604*1950) + 0.01344
+angophorahispidadayin1960 = (0.1604*1960) + 0.01344
+angophorahispidadayin1960 - angophorahispidadayin1950
+
+```
+
+3) for species end flowering time
+
+(there were none that remained significant after multiple hypothesis testing)
+
+
+
+Meta-analyses for each flowering stage shift (1: Peak, 2: Initation, 3: End)
+
+First I need to add a column for species' counts into the data frames with regression results - this is important for creating the error/variance that will weight each species in the meta-analyses
+
+```{r}
+#first step is to create a dataframe of just the species counts
+
+#for FULL flowering 
+countdataFULL <- FULLflowering %>%
+  group_by(Species) %>%
+  summarise(count = n())
+
+#for the INITIATION of flowering
+countdataSTART <- STARTflowering %>%
+  group_by(Species) %>%
+  summarise(count = n())
+
+#for the END of flowering
+countdataEND <- ENDflowering %>%
+  group_by(Species) %>%
+  summarise(count = n())
+
+
+
+#the second step is to create data frames that have the regression results and the count data 
+#at this step I also added a column for variance that will be required in the meta-analyses
+#and I also add the confidence intervals for species as these will be required in the forest plots
+
+#for FULL flowering
+FULLregressions <- left_join(mylmcoefs, countdataFULL, by = "Species") %>% #stitching data togeter
+  mutate(variance = ((std.error^2)/count)) %>% #adding variance
+  mutate(CI = 1.96*variance) %>% #adding confidence intervals for the variance
+  mutate(CIofSE = 1.96*std.error) #adding confidence intervals for the standard error
+
+#for the INITIATION of flowering
+STARTregressions <- left_join(mylmstartcoefs, countdataSTART, by = "Species") %>%
+  mutate(variance = ((std.error^2)/count)) %>%
+  mutate(CI = 1.96*variance) %>%
+  mutate(CIofSE = 1.96*std.error)
+
+#for the END of flowering
+ENDregressions <- left_join(mylmendcoefs, countdataEND, by = "Species") %>%
+  mutate(variance = ((std.error^2)/count)) %>%
+  mutate(CI = 1.96*variance) %>%
+  mutate(CIofSE = 1.96*std.error)
+
+
+
+
+#the third step is to remove the rows with the terms for intercept - I just want the model terms (Year) as this is the effect term
+
+#for FULL flowering
+FULLregressions <- FULLregressions[FULLregressions$term != "(Intercept)",]
+
+#for the INITIATION of flowering
+STARTregressions <- STARTregressions[STARTregressions$term != "(Intercept)",]
+
+#for the END of flowering
+ENDregressions <- ENDregressions[ENDregressions$term != "(Intercept)",]
+
+# Done :) regression results are ready to be meta-analysed
+```
+
+Now I run the meta-analyses
+
+1) Meta-analysis for peak flowering time across species
+```{r}
+FULLFloweringanalysis <- rma.uni(yi = estimate, vi = variance, data = FULLregressions)
+print(FULLFloweringanalysis)
+
+#RESULTS:
+#estimate = 0.0040
+#se = 0.0747
+
+#create a dataframe with the ocerall result so that I can plot this in the forest plots
+FULLoverall <- data.frame(Species = "Overall Effect", estimate = 0.0040, std.error = 0.0747)
+
+FULLregressions <- bind_rows(FULLregressions, FULLoverall)
+
+```
+
+2) Meta-analysis for initiation of flowering time across species
+```{r}
+STARTFloweringanalysis <- rma.uni(yi = estimate, vi = variance, data = STARTregressions)
+print(STARTFloweringanalysis)
+
+#RESULTS:
+#estimate = -0.4630
+#se = 0.2487
+
+#create a dataframe with the ocerall result so that I can plot this in the forest plots
+STARToverall <- data.frame(Species = "Overall Effect", estimate = -0.4630, std.error = 0.2487)
+
+STARTregressions <- bind_rows(STARTregressions, STARToverall)
+```
+
+3) Meta-analysis for the end of flowering time across species
+```{r}
+ENDFloweringanalysis <- rma.uni(yi = estimate, vi = variance, data = ENDregressions)
+print(ENDFloweringanalysis)
+
+#RESULTS:
+#estimate = -0.0152
+#se = 0.4860
+
+#create a dataframe with the ocerall result so that I can plot this in the forest plots
+ENDoverall <- data.frame(Species = "Overall Effect", estimate = -0.0152, std.error = 0.4860)
+
+ENDregressions <- bind_rows(ENDregressions, ENDoverall)
+```
+
+Then I want to create Forest plots and stitch them together to make figure S1 for the supp info
+
+First step is to create a vector of the species' names that I want to have the order of for the forest plots 
+```{r}
+SpeciesOrder <- c('Acacia saligna', 'Ageratina adenophora', 'Cinnamomum camphora', 'Cotoneaster glaucophyllus', 'Ligustrum lucidum', 'Lonicera japonica', 'Olea africana', 'Solanum nigrum', 'Acacia binervia', 'Acacia parramattensis', 'Angophora costata', 'Angophora hispida', 'Anisopogon avenaceus', 'Bossiaea scolopendria', 'Callicoma serratifolia', 'Callistemon citrinus', 'Callistemon salignus', 'Ceratopetalum gummiferum', 'Clematis aristata', 'Cyathochaeta diandra', 'Drosera peltata', 'Echinopogon caespitosus', 'Elaeocarpus reticulatus', 'Entolasia marginata', 'Glochidion ferdinandi', 'Kunzea capitata', 'Leptospermum trinervium', 'Leucophon microphyllus', 'Melaleuca linariifolia', 'Micrantheum ericoides', 'Notelaea longifolia', 'Persoonia levis', 'Pultenaea stipularis', 'Syncarpia glomulifera', 'Telopea speciosissima', 'Tetragonia tetragonioides', 'Viminaria juncea', 'Overall Effect')
+```
+
+
+Then create forest plots
+
+1) Forest plot for full flowering
+
+```{r}
+Fullfloweringplot <- ggplot(data=FULLregressions, aes(y=factor(Species, level = SpeciesOrder), x=estimate)) +
+  ylab("Species") +
+  geom_errorbar(aes(xmin=estimate - std.error, xmax=estimate + std.error), colour ="darkseagreen4", size=1, width = 0.3) +
+  geom_point(colour = 'darkseagreen4', size=5, shape=18, fill = 'darkseagreen4') +
+  geom_errorbar(data=subset(FULLregressions, Species =="Overall Effect"), aes(xmin=estimate - std.error, xmax = estimate + std.error), colour = 'lightsalmon2', size = 1, width = 0.3) +
+  geom_point(data=subset(FULLregressions, Species =="Overall Effect"), colour ="lightsalmon2", shape =15, size =4) +
+  geom_vline(xintercept=0, size =0.5, linetype = "dashed", alpha = 0.5) +
+  theme_classic() +
+  scale_y_discrete(limits = unique(rev(SpeciesOrder))) +
+  theme(axis.text.y = element_text(face='italic', size=22)) +
+  theme(axis.text.x = element_text(size=28)) +
+  theme(axis.title.x = element_blank()) +
+  theme(axis.title.y = element_text(size=40))
+  
+plot(Fullfloweringplot)  
+```
+
+2) Forest plot for initiation of flowering
+
+```{r}
+startfloweringplot <- ggplot(data=STARTregressions, aes(y=factor(Species, level = SpeciesOrder), x=estimate)) +
+  ylab("Species") +
+  geom_errorbar(aes(xmin=estimate - std.error, xmax=estimate + std.error), colour ="darkseagreen4", size=1, width = 0.3) +
+  geom_point(colour = 'darkseagreen4', size=5, shape=18, fill = 'darkseagreen4') +
+  geom_errorbar(data=subset(STARTregressions, Species =="Overall Effect"), aes(xmin=estimate - std.error, xmax = estimate + std.error), colour = 'lightsalmon2', size = 1, width = 0.3) +
+  geom_point(data=subset(STARTregressions, Species =="Overall Effect"), colour ="lightsalmon2", shape =15, size =4) +
+  geom_vline(xintercept=0, size =0.5, linetype = "dashed", alpha = 0.5) +
+  theme_classic() +
+  scale_y_discrete(limits = unique(rev(SpeciesOrder))) +
+  theme(axis.text.y = element_blank()) +
+  theme(axis.text.x = element_text(size=28)) +
+  theme(axis.title.x = element_blank()) +
+  theme(axis.title.y = element_blank())
+  
+plot(startfloweringplot)
+```
+
+3)
+```{r}
+endfloweringplot <- ggplot(data=ENDregressions, aes(y=factor(Species, level = SpeciesOrder), x=estimate)) +
+  ylab("Species") +
+  geom_errorbar(aes(xmin=estimate - std.error, xmax=estimate + std.error), colour ="darkseagreen4", size=1, width = 0.3) +
+  geom_point(colour = 'darkseagreen4', size=5, shape=18, fill = 'darkseagreen4') +
+  geom_errorbar(data=subset(ENDregressions, Species =="Overall Effect"), aes(xmin=estimate - std.error, xmax = estimate + std.error), colour = 'lightsalmon2', size = 1, width = 0.3) +
+  geom_point(data=subset(ENDregressions, Species =="Overall Effect"), colour ="lightsalmon2", shape =15, size =4) +
+  geom_vline(xintercept=0, size =0.5, linetype = "dashed", alpha = 0.5) +
+  theme_classic() +
+  scale_y_discrete(limits = unique(rev(SpeciesOrder))) +
+  theme(axis.text.y = element_blank()) +
+  theme(axis.text.x = element_text(size=28)) +
+  theme(axis.title.x = element_blank()) +
+  theme(axis.title.y = element_blank())
+  
+plot(endfloweringplot)
+```
+
+Then stitch all three plots along in a row together :)
+
+```{r}
+figureS1 <- grid.arrange(Fullfloweringplot, startfloweringplot, endfloweringplot, ncol=3, widths = c(1.50,1,1))
+
+#save figure
+
+ggsave("figureS1.tiff",
+       plot= figureS1, 
+       device = "tiff",
+       width = 30,
+       height = 12,
+       dpi = 100)
+```
+
+Done :)
+
+Now wnat to analyse the difference in shifts between native and non-native species
+
+Read in the data that states each species origin
+```{r}
+nativeintrodata <- read.csv("nativeintro.csv")
+```
+
+Attach this dataframe to the other three regression results data frame
+```{r}
+FULLregressions <- left_join(FULLregressions, nativeintrodata, by = "Species")
+STARTregressions <- left_join(STARTregressions, nativeintrodata, by = "Species")
+ENDregressions <- left_join(ENDregressions, nativeintrodata, by = "Species")
+```
+
+
+Run a meta-analytic model to determine the difference between native and introduced species
+
+1) for peak flowering time
+```{r}
+nativeintropeaklm <- rma(yi= estimate,
+                         vi= variance,
+                         mods= ~NativeIntro, 
+                         data = FULLregressions)
+
+print(nativeintropeaklm)
+```
+
+2) for flowering initiaton
+```{r}
+nativeintrostartlm <- rma(yi= estimate,
+                         vi= variance,
+                         mods= ~NativeIntro, 
+                         data = STARTregressions)
+
+print(nativeintrostartlm)
+
+##this came out as significant so I want to get the BIOLOGICAL difference between native and non-native species initiation of flowering time
+
+Nativestarts <- filter(STARTregressions, NativeIntro=="Native")
+mean(Nativestarts$estimate)
+#=-0.7684541
+Introstarts <- filter(STARTregressions, NativeIntro=="Intro")
+mean(Introstarts$estimate)
+#-1.407122
+
+
+-1.407122/-0.7684541
+```
+
+3)
+```{r}
+nativeintroendlm <- rma(yi= estimate,
+                         vi= variance,
+                         mods= ~NativeIntro, 
+                         data = ENDregressions)
+
+print(nativeintroendlm)
+```
+
+Make figure 2 to display this in our manuscript
+
+```{r}
+#I prefer violin plots
+
+#for peak flowering
+nativeintropeakplot <- ggplot(data=FULLregressions, aes(x=NativeIntro, y=estimate, fill =NativeIntro)) +
+  geom_violin() +
+  scale_fill_manual(values = c("lightsalmon2", "darkseagreen4")) +
+  stat_summary(fun.data = "mean_sdl", fun.args = list(mult=1), colour="black") +
+  theme_classic(base_size = 35) +
+  theme(legend.position="none")
+
+plot(nativeintropeakplot)
+
+
+#for initiation of flowering
+nativeintrostartplot <- ggplot(data=STARTregressions, aes(x=NativeIntro, y=estimate, fill =NativeIntro)) +
+  geom_violin() +
+  scale_fill_manual(values = c("lightsalmon2", "darkseagreen4")) +
+  stat_summary(fun.data = "mean_sdl", fun.args = list(mult=1), geom="pointrange", colour="black") +
+  theme_classic(base_size = 35) +
+  theme(legend.position="none")
+
+plot(nativeintrostartplot)
+
+
+#for end of flowering
+nativeintroendplot <- ggplot(data=ENDregressions, aes(x=NativeIntro, y=estimate, fill =NativeIntro)) +
+  geom_violin() +
+  scale_fill_manual(values = c("lightsalmon2", "darkseagreen4")) +
+  stat_summary(fun.data = "mean_sdl", fun.args = list(mult=1), geom="pointrange", colour="black") +
+  theme_classic(base_size = 35) +
+  theme(legend.position="none")
+
+plot(nativeintroendplot)
+
+#stitch all three together
+
+figure2 <- grid.arrange(nativeintropeakplot, nativeintrostartplot, nativeintroendplot, ncol=3)
+
+ggsave("figure2.tiff",
+       plot= figure2, 
+       device = "tiff",
+       width = 30,
+       height = 12,
+       dpi = 100)
+
+```
+
+Joining all dataframes together so that I can use this for a phylo-analysis
+
+```{r}
+allregressions <- left_join(FULLregressions, STARTregressions, ENDregressions, by="Species")
+#save this as a CSV
+
+write.csv(allregressions, "allregressions.csv")
+
+```
+
+
+Now analysing if there is a relationship between growth form and flowering time advancement
+
+First read in and merge growth form data  
+```{r}
+growthformdata <- read.csv("growthform.csv")
+
+FULLregressions <- left_join(FULLregressions, growthformdata, by = "Species")
+FULLregressions <- FULLregressions[!is.na(FULLregressions$Growthform),]
+STARTregressions <- left_join(STARTregressions, growthformdata, by = "Species")
+STARTregressions <- STARTregressions[!is.na(STARTregressions$Growthform),]
+ENDregressions <- left_join(ENDregressions, growthformdata, by = "Species")
+ENDregressions <- ENDregressions[!is.na(ENDregressions$Growthform),]
+```
+
+1) for peak flowering time
+```{r}
+growthformpeaklm <- rma(yi= estimate,
+                         vi= variance,
+                         mods= ~Growthform, 
+                         data = FULLregressions)
+
+print(growthformpeaklm)
+```
+
+2) for initation of flowering
+
+```{r}
+growthformstartlm <- rma(yi= estimate,
+                         vi= variance,
+                         mods= ~Growthform, 
+                         data = STARTregressions)
+
+print(growthformstartlm)
+```
+
+3) for end of flowering
+
+```{r}
+growthformendlm <- rma(yi= estimate,
+                         vi= variance,
+                         mods= ~Growthform, 
+                         data = ENDregressions)
+
+print(growthformendlm)
+
+#marginally significant overall relationship and significant difference between shrubs and herbs but not shrubs and trees
+```
+
+Plotting differences between growth forms for all three flowering stages
+
+```{r}
+#for peak flowering
+growthformpeakplot <- ggplot(data=FULLregressions, aes(x=Growthform, y=estimate)) +
+  geom_violin(fill = "lightsalmon2") +
+  stat_summary(fun.data = "mean_sdl", fun.args = list(mult=1), colour="black") +
+  theme_classic(base_size = 35) +
+  theme(legend.position="none")
+
+plot(growthformpeakplot)
+
+
+#for initiation of flowering
+growthformstartplot <- ggplot(data=STARTregressions, aes(x=Growthform, y=estimate)) +
+  geom_violin(fill = "lightsalmon2") +
+  stat_summary(fun.data = "mean_sdl", fun.args = list(mult=1), colour="black") +
+  theme_classic(base_size = 35) +
+  theme(legend.position="none")
+
+plot(growthformstartplot)
+
+
+#for end of flowering
+growthformendplot <- ggplot(data=ENDregressions, aes(x=Growthform, y=estimate)) +
+  geom_violin(fill = "lightsalmon2") +
+  stat_summary(fun.data = "mean_sdl", fun.args = list(mult=1), colour="black") +
+  theme_classic(base_size = 35) +
+  theme(legend.position="none")
+
+plot(growthformendplot)
+
+#stitch all three together
+
+figure3 <- grid.arrange(growthformpeakplot, growthformstartplot, growthformendplot, ncol=3)
+
+ggsave("figure3.tiff",
+       plot= figure3, 
+       device = "tiff",
+       width = 30,
+       height = 10,
+       dpi = 100)
+```
+

@@ -1,0 +1,152 @@
+---
+title: "Temp and precip for Sydney"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+```
+
+Read in temp data
+
+```{r}
+SYDNEY_ACORNSAT_TEMP_data <- read_csv("SYDNEY ACORNSAT TEMP data.csv")
+
+```
+
+Get means for each year
+
+```{r}
+SYDNEY_MEAN_TEMP <- SYDNEY_ACORNSAT_TEMP_data %>%
+  group_by(Year) %>%
+  summarise(mean(median)) %>%
+  rename(average = "mean(median)")
+```
+
+Get means for just spring/summer
+
+```{r}
+SYDNEY_MEAN_SPRINGSUMMER_TEMP <- SYDNEY_ACORNSAT_TEMP_data %>%
+  filter(month<2 | month>8) %>%
+  group_by(Year) %>%
+  summarise(mean(median)) %>%
+  rename(average = "mean(median)")
+```
+
+plot these two 
+
+```{r}
+yearlytempplot <- ggplot(SYDNEY_MEAN_TEMP, aes(x=Year, y=average)) +
+  geom_line(colour="lightsalmon2") +
+  geom_point(colour="lightsalmon2") +
+  theme_classic() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x = element_blank()) +
+  theme(axis.text.y=element_text(size=20)) +
+  geom_smooth(method=lm, se = FALSE, colour="darkseagreen4")
+
+plot(yearlytempplot)
+
+
+
+springsummertempplot <- ggplot(SYDNEY_MEAN_SPRINGSUMMER_TEMP, aes(x=Year, y=average)) +
+  geom_line(colour="lightsalmon2") +
+  geom_point(colour="lightsalmon2") +
+  theme_classic() +
+  scale_y_continuous(labels=scales::number_format(accuracy = 0.1)) +
+  theme(axis.text=element_text(size=20)) +
+  geom_smooth(method=lm, se = FALSE, colour="darkseagreen4")
+
+plot(springsummertempplot)
+
+figureS1 <- grid.arrange(yearlytempplot, springsummertempplot, ncol=1)
+ggsave(plot=figureS1,
+       "figureS1.tiff",
+       device="tiff",
+       width= 20,
+       height=10,
+       dpi=300)
+
+```
+
+Now look at TOTAL precip data
+
+```{r}
+Rainfall_SYDNEY <- read_csv("Rainfall_SYDNEY.csv")
+Rainfall_SYDNEY <- Rainfall_SYDNEY[!is.na(Rainfall_SYDNEY$Rainfall),]
+```
+
+```{r}
+SYDNEY_MEAN_PRECIP <- Rainfall_SYDNEY %>%
+  group_by(Year) %>%
+  summarise(mean(Rainfall), var(Rainfall)) %>%
+  rename(average = "mean(Rainfall)") %>%
+  rename(var = "var(Rainfall)")
+```
+
+And do for the months of study (spring-summer)
+
+```{r}
+SYDNEY_MEAN_SPRINGSUMMER_Precip <- Rainfall_SYDNEY %>%
+  filter(Month<2 | Month>8) %>%
+  group_by(Year) %>%
+  summarise(mean(Rainfall), var(Rainfall)) %>%
+  rename(average = "mean(Rainfall)") %>%
+  rename(var = "var(Rainfall)")
+```
+
+```{r}
+yearlyrainfallplot <- ggplot(SYDNEY_MEAN_PRECIP, aes(x=Year, y=average)) +
+  geom_line(colour="darkseagreen4") +
+  geom_point(colour="darkseagreen4") +
+  theme_classic() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x = element_blank()) +
+  theme(axis.text.y=element_text(size=20)) +
+  scale_y_continuous(labels=scales::number_format(accuracy = 0.1)) +
+  geom_smooth(method=lm, se = FALSE, colour="lightsalmon2")
+
+  geom_smooth(method=lm, se = FALSE, colour="lightsalmon2")
+plot(yearlyrainfallplot)
+
+yearlyrainfallvarplor <- ggplot(SYDNEY_MEAN_PRECIP, aes(x=Year, y=var)) +
+  geom_line(colour="darkseagreen4") +
+  geom_point(colour="darkseagreen4") +
+  theme_classic() +
+  theme(axis.text=element_text(size=20)) +
+  geom_smooth(method=lm, se = FALSE, colour="lightsalmon2")
+plot(yearlyrainfallvarplor)
+
+
+last60yearsprecip <- SYDNEY_MEAN_PRECIP %>%
+  filter(Year >= 1960)
+
+last60yearsrainfallplot <- ggplot(last60yearsprecip, aes(x=Year, y=average)) +
+  geom_line(colour="darkseagreen4") +
+  geom_point(colour="darkseagreen4") +
+  theme_classic() +
+  theme(axis.text = element_text(size=20)) +
+  geom_smooth(method=lm, se = FALSE, colour="lightsalmon2")
+plot(last60yearsrainfallplot)
+
+figureS2b <- grid.arrange(yearlyrainfallplot, yearlyrainfallvarplor, ncol=1)
+
+ggsave(plot=figureS2b,
+       "figureS2b.tiff",
+       device = "tiff",
+       width=20,
+       height=10,
+       dpi=300)
+
+ggsave(plot=last60yearsrainfallplot,
+       "figureS2c.tiff",
+       device="tiff",
+       width=20,
+       height=5,
+       dpi=300)
+
+
+```
+
