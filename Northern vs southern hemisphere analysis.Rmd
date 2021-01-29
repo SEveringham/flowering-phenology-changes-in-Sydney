@@ -1,0 +1,30 @@
+---
+title: "nthn vs sthn hemi analysis"
+output: html_document
+---
+
+libraries required
+
+```{r}
+library(dplyr)
+library(lme4)
+library(MuMIn)
+```
+
+data 
+
+```{r}
+hemispheredata <- read.csv("hemispheredatabinomial.csv")
+
+```
+
+Run the model
+
+```{r}
+hemispheremodel <- glmer(Advancing ~ Hemisphere + (1|Study), data = hemispheredata, family=binomial)
+nullmodel <- glmer(Advancing ~ (1|Study), data = hemispheredata, family=binomial)
+
+summary(hemispheremodel)
+r.squaredGLMM(hemispheremodel)
+```
+
