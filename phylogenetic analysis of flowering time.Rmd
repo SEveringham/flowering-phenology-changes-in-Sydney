@@ -1,0 +1,170 @@
+---
+title: "flowering phenology phylogenetic analysis"
+output: html_document
+---
+
+libraries required
+```{r}
+library(dplyr)
+library(devtools)
+library(V.PhyloMaker)
+library(ggplot2)
+library(nlme)
+library(phytools)
+library(gridExtra)
+```
+
+read in your data
+- NB for a phylogenetic analysis we need to make sure we have three columns with these exact names - "species", "genus", "family" (beware of case)
+- species will be a column of things that have the long species name, e.g. Banksia serrata
+- genus will be a column of JUST the genus name, same e.g. Banksia
+- family is the family of the species, same e.g. Proteacea
+
+```{r}
+phylodata <- read.csv("Speciesgenusfamily.csv")
+```
+
+Create a data frame with ONLY information about species, genus and family
+
+```{r}
+myspecieslist <- select(phylodata, "species", "genus", "family")
+```
+
+Getting our tree
+we will run the following code which extracts a tree of JUST OUR species
+- note that GBOTB.extended is the default tree, it is the one created by Smith and Borwn, 2018 with updated phylogenies
+- output.sp.list = TRUE will mean that our tree will also spit out a list of what the analysis did to each species along the way, sometimes it bound the species to a tip in the tree, sometimes it prunes the species or sometimes it fails to bind the species to the backbone phylogeny - it is a good idea to check this list, because sometimes the "fail" is because there's a spelling error in the species/genus/family name
+- output.tree = TRUE will allow the analysis to spit out a pretty little tree of our species
+- scenarios is the choice we make about how to deal with species that are new and DON'T occur in the mega-tree. Scenario 3 ("S3"), I BELIEVE personally is the best way to deal with this - see Qian and Jin 2019 and Qian and Jin 2016 for a breakdown of the way each scenario works :)
+
+
+```{r}
+Phyloanalysis <- phylo.maker(myspecieslist, tree = GBOTB.extended, output.sp.list = TRUE, output.tree = TRUE, scenarios = "S3")
+
+mytree <- Phyloanalysis$scenario.3 #creating just your tree (using scenario 3)
+```
+
+Plot that phylogeny to get a pretty tree diagram
+
+```{r}
+phyloplot <- plot.phylo(mytree, edge.width = 2, cex=1)
+
+#And save that tree above
+```
+
+
+Now running a test for a phylogenetic signal
+
+1. Make sure the branch labels (ie our species) match in the tree AND in our data frame
+
+```{r}
+# add a column with species' names with an underscore in them (because that's what V.phylomaker does to the species labels)
+Species_ <- gsub(" ", "_", phylodata$species)
+phylodata <- cbind(phylodata, Species_)
+
+#make this column the row names 
+rownames(phylodata) <- phylodata[,7]
+```
+
+2. Turn flowering shift estimates into a vector and add the species names to it
+
+```{r}
+#for full flowering
+FULL <- as.vector(phylodata$fullestimate)
+names(FULL) <- phylodata$Species_
+
+#for initation of flowering
+START <- as.vector(phylodata$startestimate)
+names(START) <- phylodata$Species_
+
+#for end of flowering
+END <- as.vector(phylodata$endestimate)
+names(END) <- phylodata$Species_
+```
+
+3. Run two analyses- one with lambda method and one with K method
+
+```{r}
+#for full flowering data
+lambda <- phylosig(mytree, FULL, method="lambda", test=TRUE)
+print(lambda)
+
+K <- phylosig(mytree, FULL, method="K", test=TRUE)
+print(K)
+
+#for initation of flowering data
+lambda <- phylosig(mytree, START, method="lambda", test=TRUE)
+print(lambda)
+
+K <- phylosig(mytree, START, method="K", test=TRUE)
+print(K)
+
+#for end of flowering data
+lambda <- phylosig(mytree, END, method="lambda", test=TRUE)
+print(lambda)
+
+K <- phylosig(mytree, END, method="K", test=TRUE)
+print(K)
+```
+
+Now, Making a graph of your tree with the shifts in flowering time to see if there's a pattern!
+
+Steps:
+1. Make a list of the species names in the ORDER as they appear in your tree (so that our graph will match up with the correct order)
+
+```{r}
+specieslist <- as.data.frame(Phyloanalysis$scenario.3$tip.label) %>%
+  rename(species = `Phyloanalysis$scenario.3$tip.label`)
+
+specieslist$species <- gsub("_", " ", specieslist$species)
+
+```
+
+2. Merge with flowering time data
+
+```{r}
+floweringtimedata <- left_join(specieslist, phylodata, by = "species")
+```
+
+3. create graph
+
+```{r}
+##lock in order of species
+floweringtimedata$species <- factor(floweringtimedata$species, levels = floweringtimedata$species)
+
+#plot full
+FULLbyPHYLOplot <- ggplot(floweringtimedata, aes(x=fullestimate, y=species)) + geom_col(aes(fill = cut(fullestimate, c(-4,0,4)))) + 
+  scale_fill_manual(name = "Full Estimate", values = c("(-4,0]" = "lightsalmon2", "(0,4]" = "darkseagreen")) +
+  theme_classic() +
+  theme(axis.text.y=element_text(size=10)) +
+  theme(legend.position = "none")
+plot(FULLbyPHYLOplot)
+
+#plot start
+STARTbyPHYLOplot <- ggplot(floweringtimedata, aes(x=startestimate, y=species)) + geom_col(aes(fill = cut(startestimate, c(-4,0,4)))) + 
+  scale_fill_manual(name = "start Estimate", values = c("(-4,0]" = "lightsalmon2", "(0,4]" = "darkseagreen")) +
+  theme_classic() +
+  theme(axis.text.y=element_text(size=10)) +
+  theme(legend.position = "none") +
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank())
+plot(STARTbyPHYLOplot)
+
+#plot end
+ENDbyPHYLOplot <- ggplot(floweringtimedata, aes(x=endestimate, y=species)) + geom_col(aes(fill = cut(endestimate, c(-4,0,4)))) + 
+  scale_fill_manual(name = "end Estimate", values = c("(-4,0]" = "lightsalmon2", "(0,4]" = "darkseagreen")) +
+  theme_classic() +
+  theme(axis.text.y=element_text(size=10)) +
+  theme(legend.position = "none") +
+  theme(axis.text.y = element_blank(),
+        axis.title.y = element_blank())
+plot(ENDbyPHYLOplot)
+
+#stitchtogether
+
+floweringshiftsinphylo <- grid.arrange(FULLbyPHYLOplot, STARTbyPHYLOplot, ENDbyPHYLOplot, ncol=3)
+
+#save plot
+
+ggsave(filename = "phyloplots.tiff", plot =  floweringshiftsinphylo, device = "tiff", dpi = 100, width= 25, height= 10, units = "in")
+```
