@@ -119,13 +119,30 @@ FIGURE PLOTTING
 
 Function for graphs with significant relationships for peak flowering
 
+
 ```{r}
-significantscatterplots <- function(Speciesname = "", value,...){
+#nativespecies
+significantscatterplotsnative <- function(Speciesname = "", value,...){
+  FULLflowering %>%
+    filter(str_detect(!!FULLflowering$Species, value)) %>%
+    ggplot(aes(x=Year, y=Dayofflowering)) +
+    geom_point(colour="darkseagreen4", size=5, alpha = 0.5) +
+    geom_smooth(method=lm, colour ="darkseagreen4", se=F, size=4) +
+    ggtitle(Speciesname) +
+    theme_classic() +
+    theme(plot.title = element_text(size = 35, face = "italic", hjust = 0.5)) +
+    theme(axis.text=element_blank(),
+          axis.title=element_blank()) +
+  coord_cartesian(xlim = c(1870, 2020), ylim = c(150, 517))
+}
+
+#nonnativespecies
+significantscatterplotsnonnative <- function(Speciesname = "", value,...){
   FULLflowering %>%
     filter(str_detect(!!FULLflowering$Species, value)) %>%
     ggplot(aes(x=Year, y=Dayofflowering)) +
     geom_point(colour="lightsalmon2", size=5, alpha = 0.5) +
-    geom_smooth(method=lm, colour ="darkseagreen4", se=F, size=4) +
+    geom_smooth(method=lm, colour ="lightsalmon2", se=F, size=4) +
     ggtitle(Speciesname) +
     theme_classic() +
     theme(plot.title = element_text(size = 35, face = "italic", hjust = 0.5)) +
@@ -138,6 +155,21 @@ significantscatterplots <- function(Speciesname = "", value,...){
 Function for graphs without significant relationships for peak flowering 
 
 ```{r}
+#native species
+scatterplotsnative <- function(Speciesname = "", value,...){
+  FULLflowering %>%
+    filter(str_detect(!!FULLflowering$Species, value)) %>%
+    ggplot(aes(x=Year, y=Dayofflowering)) +
+    geom_point(colour="darkseagreen4", size=5, alpha = 0.5) +
+    ggtitle(Speciesname) +
+    theme_classic() +
+    theme(plot.title = element_text(size = 35, face = "italic", hjust = 0.5)) +
+    theme(axis.text=element_blank(),
+          axis.title=element_blank()) +
+  coord_cartesian(xlim = c(1870, 2020), ylim = c(150, 517))
+}
+
+#nonnative species
 scatterplots <- function(Speciesname = "", value,...){
   FULLflowering %>%
     filter(str_detect(!!FULLflowering$Species, value)) %>%
@@ -158,29 +190,29 @@ Run each graph for each species :)
 1. Graph all the species with significant relationships
 
 ```{r}
-Callistemoncitrinus <- significantscatterplots(value = "Callistemon citrinus", Speciesname = "Callistemon citrinus")
+Callistemoncitrinus <- significantscatterplotsnative(value = "Callistemon citrinus", Speciesname = "Callistemon citrinus")
 
-Notelaealongifolia <- significantscatterplots(value = "Notelaea longifolia", Speciesname = "Notelaea longifolia \n f. longifolia")
+Notelaealongifolia <- significantscatterplotsnative(value = "Notelaea longifolia", Speciesname = "Notelaea longifolia \n f. longifolia")
 
-Oleaeuropaea <- significantscatterplots(value = "Olea africana", Speciesname = "Olea europaea \n subsp. cuspidata")
+Oleaeuropaea <- significantscatterplotsnonnative(value = "Olea africana", Speciesname = "Olea europaea \n subsp. cuspidata")
 
-Leptospermumtrinervium <- significantscatterplots(value = "Leptospermum trinervium", Speciesname = "Leptospermum trinervium")
+Leptospermumtrinervium <- significantscatterplotsnative(value = "Leptospermum trinervium", Speciesname = "Leptospermum trinervium")
 
-Melaleucalinariifolia <- significantscatterplots(value = "Melaleuca linariifolia", Speciesname = "Melaleuca linariifolia")
+Melaleucalinariifolia <- significantscatterplotsnative(value = "Melaleuca linariifolia", Speciesname = "Melaleuca linariifolia")
 
-Ligustrumlucidum <- significantscatterplots(value = "Ligustrum lucidum", Speciesname = "Ligustrum lucidum")
+Ligustrumlucidum <- significantscatterplotsnonnative(value = "Ligustrum lucidum", Speciesname = "Ligustrum lucidum")
 
-Clematisaristata <- significantscatterplots(value = "Clematis aristata", Speciesname = "Clematis aristata")
+Clematisaristata <- significantscatterplotsnative(value = "Clematis aristata", Speciesname = "Clematis aristata")
 
-Telopeaspeciosissima <- significantscatterplots(value = "Telopea speciosissima", Speciesname = "Telopea speciosissima")
+Telopeaspeciosissima <- significantscatterplotsnative(value = "Telopea speciosissima", Speciesname = "Telopea speciosissima")
 
-Acaciasaligna <- significantscatterplots(value = "Acacia saligna", Speciesname = "Acacia saligna")
+Acaciasaligna <- significantscatterplotsnonantive(value = "Acacia saligna", Speciesname = "Acacia saligna")
 
-Kunzeacapitata <- significantscatterplots(value = "Kunzea capitata", Speciesname = "Kunzea capitata")
+Kunzeacapitata <- significantscatterplotsnative(value = "Kunzea capitata", Speciesname = "Kunzea capitata")
 
-Echinopogoncaespitosus <- significantscatterplots(value = "Echinopogon caespitosus", Speciesname = "Echinopogon caespitosus")
+Echinopogoncaespitosus <- significantscatterplotsnative(value = "Echinopogon caespitosus", Speciesname = "Echinopogon caespitosus")
 
-Cotoneasterglaucophyllus <- significantscatterplots(value = "Cotoneaster glaucophyllus", Speciesname = "Cotoneaster glaucophyllus")
+Cotoneasterglaucophyllus <- significantscatterplotsnonnative(value = "Cotoneaster glaucophyllus", Speciesname = "Cotoneaster glaucophyllus")
 
 
 ```
@@ -188,56 +220,56 @@ Cotoneasterglaucophyllus <- significantscatterplots(value = "Cotoneaster glaucop
 2. Graph all the species with non-singificant relationships
 
 ```{r}
-Acaciaparramattensis <- scatterplots(value = "Acacia parramattensis", Speciesname = "Acacia parramattensis")
+Acaciaparramattensis <- scatterplotsnative(value = "Acacia parramattensis", Speciesname = "Acacia parramattensis")
 
-Leucopogonmicrophyllus <- scatterplots(value = "Leucopogon microphyllus", Speciesname = "Leucopogon microphyllus")
+Leucopogonmicrophyllus <- scatterplotsnative(value = "Leucopogon microphyllus", Speciesname = "Leucopogon microphyllus")
 
-Droserapeltata <- scatterplots(value = "Drosera peltata", Speciesname = "Drosera peltata")
+Droserapeltata <- scatterplotsnative(value = "Drosera peltata", Speciesname = "Drosera peltata")
 
-Tetragonia <- scatterplots(value = "Tetragonia tetragonioides", Speciesname = "Tetragonia tetragonioides")
+Tetragonia <- scatterplotsnative(value = "Tetragonia tetragonioides", Speciesname = "Tetragonia tetragonioides")
 
-Cyathochaetadiandra <- scatterplots(value = "Cyathochaeta diandra", Speciesname = "Cyathochaeta diandra")
+Cyathochaetadiandra <- scatterplotsnative(value = "Cyathochaeta diandra", Speciesname = "Cyathochaeta diandra")
 
-Anisopogonavenaceus <- scatterplots(value = "Anisopogon avenaceus", Speciesname = "Anisopogon avenaceus")
+Anisopogonavenaceus <- scatterplotsnative(value = "Anisopogon avenaceus", Speciesname = "Anisopogon avenaceus")
 
-Callicomaserratifolia <- scatterplots(value = "Callicoma serratifolia", Speciesname = "Callicoma serratifolia")
+Callicomaserratifolia <- scatterplotsnative(value = "Callicoma serratifolia", Speciesname = "Callicoma serratifolia")
 
-Glochidionferd <- scatterplots(value = "Glochidion ferdinandi", Speciesname = "Glochidion ferdinandi")
+Glochidionferd <- scatterplotsnative(value = "Glochidion ferdinandi", Speciesname = "Glochidion ferdinandi")
 
-Pultenaeastipularis <- scatterplots(value = "Pultenaea stipularis", Speciesname = "Pultenaea stipularis")
+Pultenaeastipularis <- scatterplotsnative(value = "Pultenaea stipularis", Speciesname = "Pultenaea stipularis")
 
-Ceratopetalumgummiferum <- scatterplots(value = "Ceratopetalum gummiferum", Speciesname = "Ceratopetalum gummiferum")
+Ceratopetalumgummiferum <- scatterplotsnative(value = "Ceratopetalum gummiferum", Speciesname = "Ceratopetalum gummiferum")
 
-Entolasiamarginata <- scatterplots(value = "Entolasia marginata", Speciesname = "Entolasia marginata")
+Entolasiamarginata <- scatterplotsnative(value = "Entolasia marginata", Speciesname = "Entolasia marginata")
 
-Acaciabinervia <- scatterplots(value = "Acacia binervia", Speciesname = "Acacia binervia")
+Acaciabinervia <- scatterplotsnative(value = "Acacia binervia", Speciesname = "Acacia binervia")
 
-Ageratinaadenophora <- scatterplots(value = "Ageratina adenophora", Speciesname = "Ageratina adenophora")
+Ageratinaadenophora <- scatterplotsnonnative(value = "Ageratina adenophora", Speciesname = "Ageratina adenophora")
 
-Angophorahispida <- scatterplots(value = "Angophora hispida", Speciesname = "Angophora hispida")
+Angophorahispida <- scatterplotsnative(value = "Angophora hispida", Speciesname = "Angophora hispida")
 
-Callistemonsalignus <- scatterplots(value = "Callistemon salignus", Speciesname = "Callistemon salignus")
+Callistemonsalignus <- scatterplotsnative(value = "Callistemon salignus", Speciesname = "Callistemon salignus")
 
-Micrantheumericoides <- scatterplots(value = "Micrantheum ericoides", Speciesname = "Micrantheum ericoides")
+Micrantheumericoides <- scatterplotsnative(value = "Micrantheum ericoides", Speciesname = "Micrantheum ericoides")
 
-Syncarpiaglomulifera <- scatterplots(value = "Syncarpia glomulifera", Speciesname = "Syncarpia glomulifera")
+Syncarpiaglomulifera <- scatterplotsnative(value = "Syncarpia glomulifera", Speciesname = "Syncarpia glomulifera")
 
-Lonicerajaponica <- scatterplots(value = "Lonicera japonica", Speciesname = "Lonicera japonica")
+Lonicerajaponica <- scatterplotsnonnative(value = "Lonicera japonica", Speciesname = "Lonicera japonica")
 
-Viminariajuncea <- scatterplots(value = "Viminaria juncea", Speciesname = "Viminaria juncea")
+Viminariajuncea <- scatterplotsnative(value = "Viminaria juncea", Speciesname = "Viminaria juncea")
 
-Angophoracostata <- scatterplots(value = "Angophora costata", Speciesname = "Angophora costata")
+Angophoracostata <- scatterplotsnative(value = "Angophora costata", Speciesname = "Angophora costata")
 
 
-Elaeocarpusreticulatus <- scatterplots(value = "Elaeocarpus reticulatus", Speciesname = "Elaeocarpus reticulatus")
+Elaeocarpusreticulatus <- scatterplotsnative(value = "Elaeocarpus reticulatus", Speciesname = "Elaeocarpus reticulatus")
 
-Solanumnigrum <- scatterplots(value = "Solanum nigrum", Speciesname = "Solanum nigrum")
+Solanumnigrum <- scatterplotsnonnative(value = "Solanum nigrum", Speciesname = "Solanum nigrum")
 
-Cinnamomumcamphora <- scatterplots(value = "Cinnamomum camphora", Speciesname = "Cinnamomum camphora")
+Cinnamomumcamphora <- scatterplotsnonnative(value = "Cinnamomum camphora", Speciesname = "Cinnamomum camphora")
 
-Persoonialevis <- scatterplots(value = "Persoonia levis", Speciesname = "Persoonia levis")
+Persoonialevis <- scatterplotsnative(value = "Persoonia levis", Speciesname = "Persoonia levis")
 
-Bossiaeascolopendria <- scatterplots(value = "Bossiaea scolopendria", Speciesname = "Bossiaea scolopendria")
+Bossiaeascolopendria <- scatterplotsnative(value = "Bossiaea scolopendria", Speciesname = "Bossiaea scolopendria")
 ```
 
 Stitch all the plots together to create Figure 1
