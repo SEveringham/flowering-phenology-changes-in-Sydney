@@ -20,6 +20,7 @@ Read in data - this was stitched together in "cleaning data and initial plots.R"
 
 ```{r}
 floweringdata <- read.csv("floweringdatafull.csv")
+floweringdatawithdaydate <- read.csv("floweringdatafullwithfulldates.csv") #this is the flowering data that have date resolved to day rather than assigned the specimens that only had month data to the 15th day of the month - these specimens have been deleted from this data
 ```
 
 Get year and julian date from start of spring (July) as separate columns
@@ -39,20 +40,45 @@ floweringdata$Dayofflowering <- floweringdata$Truefloweringdate + floweringdata$
 
 ```
 
+Repeat this chunk with data that has removed the points that were only resolved to month and only has points that have complete date data
+
+
+```{r}
+floweringdatawithdaydate$Year <- as.numeric(format(as.Date(floweringdatawithdaydate$datelong, format="%Y-%m-%d"), "%Y")) #this creates a column with just the year
+
+floweringdatawithdaydate$Truefloweringdate <- abs(yday(floweringdatawithdaydate$datelong)) #this creates a column with just the day of the year (from 1 to 366)
+
+## now we want to make our year start in June - so for every day that is before june, we want to add it to 366 so that it tacks on at the END of the season!!!
+
+#first create a column stating whether we need to add 366 days or zero days
+floweringdatawithdaydate$add366ornot <- ifelse(floweringdatawithdaydate$Truefloweringdate < 152, 366, 0)
+
+#then add them together!
+floweringdatawithdaydate$Dayofflowering <- floweringdatawithdaydate$Truefloweringdate + floweringdatawithdaydate$add366ornot
+
+```
+
+
 Subset only data showing FULL flowering
 
 ```{r}
 FULLflowering <- subset(floweringdata, Binary=="1")
+FULLfloweringresolveddate <- subset(floweringdatawithdaydate, Binary =="1")
 ```
 
 Run all lms on each species for their year vs flowering time 
 
 ```{r}
 mylms <- FULLflowering %>%
-  group_by(Species) %>%
-  do(fit=lm(Dayofflowering ~ Year,.))
+  nest_by(Species) %>%
+  mutate(fit=list(lm(Dayofflowering ~ Year, data = data))) %>%
+  summarise(tidy(fit))
 
-mylmcoefs <- as.data.frame(tidy(mylms, fit))
+mylmsdateresolved <- FULLfloweringresolveddate %>%
+  nest_by(Species) %>%
+  mutate(fit=list(lm(Dayofflowering ~ Year, data = data))) %>%
+  summarise(tidy(fit))
+
 ```
 
 Running a p-value correction due to multiple hypothesis testing - and then saving this as a csv file
