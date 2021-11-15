@@ -1,0 +1,315 @@
+---
+title: "Flowering phenology climate analysis"
+output: html_document
+---
+
+Libraries required
+```{r}
+library(dplyr)
+library(relaimpo)
+library(stringr)
+```
+
+Read in data
+
+```{r}
+#Full flowering data was saved from a data file in the markdown "flowering phenology analysis.Rmd"
+#We then added a minimum flowering date for each species to get teh climate of a 3 month seson prior to flowering that was the same three months for each year - this data cleaning is available in the rmarkdown "Getting minimum flowering date for each species.rmd"
+#Climate data were then downloaded from the weather station for each observation point in the Northern Sydney region
+
+fullfloweringdatawithclimate <- read.csv("floweringdatawithminimumdate_station_data.csv")
+```
+
+Now we want to run separate multiple linear regressions for each species to test not only the effect of Year on flowering time but also the effect of average temperature and average precipitation on flowering time. Then we want o determine the relative importance of Year vs. climatic variables separately (i.e. temperature and precipitation separately)
+
+1. Function for multiple linear regression
+```{r}
+multiplelinearreg <- function(data, col_name, value, formula){
+  data %>%
+    filter(str_detect(!!col_name, value)) %>%
+    lm(formula, data = .)
+}
+```
+
+2. Run models for each and get variable importance of temperature relative to year
+```{r}
+#NB species names have been summarised to first initial of genus and species (gs)
+abtemp <-  multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Acacia binervia", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(abtemp, type="lmg")
+
+aptemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Acacia parramattensis", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(aptemp, type="lmg")
+
+astemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Acacia saligna", formula = Dayofflowering ~ Year + avg_Tmid_degC)
+summary(astemp)
+calc.relimp(astemp, type="lmg")
+
+aatemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Ageratina adenophora", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(aatemp, type="lmg")
+
+actemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Angophora costata", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(actemp, type="lmg")
+
+ahtemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Angophora hispida", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(ahtemp, type="lmg")
+
+aavtemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Anisopogon avenaceus", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(aavtemp, type="lmg")
+
+bstemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Bossiaea scolopendria", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(bstemp, type="lmg")
+
+cstemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Callicoma serratifolia", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(cstemp, type="lmg")
+
+cctemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Callistemon citrinus", formula = Dayofflowering ~ Year + avg_Tmid_degC)
+summary(cctemp)
+calc.relimp(cctemp, type="lmg")
+
+csatemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Callistemon salignus", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(csatemp, type="lmg")
+
+cgtemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Ceratopetalum gummiferum", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(cgtemp, type="lmg")
+
+ccatemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Cinnamomum camphora", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(ccatemp, type="lmg")
+
+catemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Clematis aristata", formula = Dayofflowering ~ Year + avg_Tmid_degC)
+summary(catemp)
+calc.relimp(catemp, type="lmg")
+
+cgltemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Cotoneaster glaucophyllus", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+summary(cgltemp)
+calc.relimp(cgltemp, type="lmg")
+
+cdtemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Cyathochaeta diandra", formula = Dayofflowering ~ Year + avg_Tmid_degC)
+calc.relimp(cdtemp, type="lmg")
+
+dptemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Drosera peltata", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(dptemp, type="lmg")
+
+ectemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Echinopogon caespitosus", formula = Dayofflowering ~ Year + avg_Tmid_degC)
+summary(ectemp)
+calc.relimp(ectemp, type="lmg")
+
+ertemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Elaeocarpus reticulatus", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(ertemp, type="lmg")
+
+emtemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Entolasia marginata", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(emtemp, type="lmg")
+
+gftemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Glochidion ferdinandi", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(gftemp, type="lmg")
+
+kctemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Kunzea capitata", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+summary(kctemp)
+calc.relimp(kctemp, type="lmg")
+
+lttemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Leptospermum trinervium", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+summary(lttemp)
+calc.relimp(lttemp, type="lmg")
+
+lmtemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Leucopogon microphyllus", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(lmtemp, type="lmg")
+
+lltemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Ligustrum lucidum", formula = Dayofflowering ~ Year + avg_Tmid_degC)
+summary(lltemp)
+calc.relimp(lltemp, type="lmg")
+
+ljtemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Lonicera japonica", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(ljtemp, type="lmg")
+
+mltemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Melaleuca linariifolia", formula = Dayofflowering ~ Year + avg_Tmid_degC)
+summary(mltemp)
+calc.relimp(mltemp, type="lmg")
+
+metemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Micrantheum ericoides", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(metemp, type="lmg")
+
+nltemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Notelaea longifolia", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+summary(nltemp)
+calc.relimp(nltemp, type="lmg")
+
+oatemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Olea africana", formula = Dayofflowering ~ Year + avg_Tmid_degC)
+summary(oatemp)
+calc.relimp(oatemp, type="lmg")
+
+pltemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Persoonia levis", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(pltemp, type="lmg")
+
+pstemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Pultenaea stipularis", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(pstemp, type="lmg")
+
+sntemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Solanum nigrum", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(sntemp, type="lmg")
+
+sgtemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Syncarpia glomulifera", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(sgtemp, type="lmg")
+
+tstemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Telopea speciosissima", formula = Dayofflowering ~ Year + avg_Tmid_degC)
+summary(tstemp)
+calc.relimp(tstemp, type="lmg")
+
+tttemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Tetragonia tetragonioides", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(tttemp, type="lmg")
+
+vjtemp <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Viminaria juncea", formula = Dayofflowering ~ Year + avg_Tmid_degC) 
+calc.relimp(vjtemp, type="lmg")
+
+```
+
+3. Run models for each and get variable importance of now precipitation relative to year
+```{r}
+abprecip <-  multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Acacia binervia", formula = Dayofflowering ~ Year + avg_Rain_mm)
+calc.relimp(abprecip, type="lmg")
+
+apprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Acacia parramattensis", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(apprecip, type="lmg")
+
+asprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Acacia saligna", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+summary(asprecip)
+calc.relimp(asprecip, type="lmg")
+
+aaprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Ageratina adenophora", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(aaprecip, type="lmg")
+
+acprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Angophora costata", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(acprecip, type="lmg")
+
+ahprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Angophora hispida", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(ahprecip, type="lmg")
+
+aavprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Anisopogon avenaceus", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(aavprecip, type="lmg")
+
+bsprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Bossiaea scolopendria", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(bsprecip, type="lmg")
+
+csprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Callicoma serratifolia", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(csprecip, type="lmg")
+
+ccprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Callistemon citrinus", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+summary(ccprecip)
+calc.relimp(ccprecip, type="lmg")
+
+csaprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Callistemon salignus", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(csaprecip, type="lmg")
+
+cgprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Ceratopetalum gummiferum", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(cgprecip, type="lmg")
+
+ccaprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Cinnamomum camphora", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(ccaprecip, type="lmg")
+
+caprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Clematis aristata", formula = Dayofflowering ~ Year + avg_Rain_mm)
+summary(caprecip)
+calc.relimp(caprecip, type="lmg")
+
+cglprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Cotoneaster glaucophyllus", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+summary(cglprecip)
+calc.relimp(cglprecip, type="lmg")
+
+cdprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Cyathochaeta diandra", formula = Dayofflowering ~ Year + avg_Rain_mm)
+calc.relimp(cdprecip, type="lmg")
+
+dpprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Drosera peltata", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(dpprecip, type="lmg")
+
+ecprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Echinopogon caespitosus", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+summary(ecprecip)
+calc.relimp(ecprecip, type="lmg")
+
+erprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Elaeocarpus reticulatus", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(erprecip, type="lmg")
+
+emprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Entolasia marginata", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(emprecip, type="lmg")
+
+gfprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Glochidion ferdinandi", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(gfprecip, type="lmg")
+
+kcprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Kunzea capitata", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+summary(kcprecip)
+calc.relimp(kcprecip, type="lmg")
+
+ltprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Leptospermum trinervium", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+summary(ltprecip)
+calc.relimp(ltprecip, type="lmg")
+
+lmprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Leucopogon microphyllus", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(lmprecip, type="lmg")
+
+llprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Ligustrum lucidum", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+summary(llprecip)
+calc.relimp(llprecip, type="lmg")
+
+ljprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Lonicera japonica", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(ljprecip, type="lmg")
+
+mlprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Melaleuca linariifolia", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+summary(mlprecip)
+calc.relimp(mlprecip, type="lmg")
+
+meprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Micrantheum ericoides", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(meprecip, type="lmg")
+
+nlprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Notelaea longifolia", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+summary(nlprecip)
+calc.relimp(nlprecip, type="lmg")
+
+oaprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Olea africana", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+summary(oaprecip)
+calc.relimp(oaprecip, type="lmg")
+
+plprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Persoonia levis", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(plprecip, type="lmg")
+
+psprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Pultenaea stipularis", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(psprecip, type="lmg")
+
+snprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Solanum nigrum", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(snprecip, type="lmg")
+
+sgprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Syncarpia glomulifera", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(sgprecip, type="lmg")
+
+tsprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Telopea speciosissima", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+summary(tsprecip)
+calc.relimp(tsprecip, type="lmg")
+
+ttprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Tetragonia tetragonioides", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(ttprecip, type="lmg")
+
+vjprecip <- multiplelinearreg(fullfloweringdatawithclimate, col_name= fullfloweringdatawithclimate$Species, value = "Viminaria juncea", formula = Dayofflowering ~ Year + avg_Rain_mm) 
+calc.relimp(vjprecip, type="lmg")
+
+```
+
+I wasn't 100% sure how to pull model results (name p values) out of these results so I have also re-run the linear models here to get a table of results for temperature and precipitation multiple linear regression models
+
+```{r}
+temperaturelinearregs <- fullfloweringdatawithclimate %>%
+  nest_by(Species) %>%
+  mutate(fit=list(lm(Dayofflowering ~ Year + avg_Tmid_degC, data = data))) %>%
+  summarise(tidy(fit))
+
+#save as a csv
+
+write.csv(temperaturelinearregs, "temperaturelinearregs.csv")
+
+#and now precipitation 
+precipitationlinearregs <- fullfloweringdatawithclimate %>%
+  nest_by(Species) %>%
+  mutate(fit=list(lm(Dayofflowering ~ Year + avg_Rain_mm, data = data))) %>%
+  summarise(tidy(fit))
+
+#and save as csv as well 
+
+write.csv(precipitationlinearregs, "precipitationlinearregs.csv")
+
+```
+
+
+
+

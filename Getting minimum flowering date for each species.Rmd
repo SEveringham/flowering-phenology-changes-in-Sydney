@@ -1,0 +1,64 @@
+---
+title: "Getting minimum flowering date for each species"
+output: html_document
+---
+
+This Rmarkdown is to obtain a "minimum flowering date" - the earliest possible flowering time within the flowering season across all records within a species. This metric will then be used to determine the 3 months prior to flowering period climatic data for analysis of the effect of temperature and precipitation on flowering time
+
+Libraries required
+```{r}
+library(dplyr)
+```
+
+Read in data
+
+```{r}
+#This data was created in the Rmarkdown "flowering phenology analysis.Rmd"
+floweringdata <- read.csv("fullfloweringdata.csv")
+
+#there were two species with one acession point each with NAs that will mess up the mean so I will remove these rows
+
+floweringdata <- floweringdata[!is.na(floweringdata$Dayofflowering),]
+
+#also remove modiola caroliniana as we never actually used that species in our data 
+
+floweringdata <- floweringdata[!(floweringdata$Species == "Modiola caroliniana"),]
+
+```
+
+Gain the earliest flowering date for each species
+
+```{r}
+minimumfloweringdate <- aggregate(floweringdata$Dayofflowering, by = list(floweringdata$Species), min) %>%
+  rename(Species = Group.1) %>%
+  rename(minimumfloweringdayofyear = x)
+
+#rejoin that back into the dataframe
+
+floweringdata <- left_join(floweringdata, minimumfloweringdate, by = "Species")
+```
+
+Now that this column for minimum flowering date is in the dataframe, all of the species start their minimum flowering before the new year cycle (i.e. before day 366) so we dont need to convert the days back to the cycle starting at January 1st as the days below 366 represent the calendar days between 152-366 from June-December (i.e. the first half of the flowering season). This again is because southern hemisphere spring-summer falls over the new year.
+
+What we do need to do is get the Day of flowering (from 152-366) back to an actual date
+
+```{r}
+#get the day-month date from the day of flowering 
+floweringdata$minimumfloweringdate <- strftime(as.Date(floweringdata$minimumfloweringdayofyear, origin = "2019-01-01"), "%d-%m")
+
+#join this with the year to get the full date
+
+floweringdata$minimumfloweringdate <- as.Date(with(floweringdata, paste(minimumfloweringdate, Year, sep="-")), "%d-%m-%Y")
+
+```
+
+
+All finished, now save this as a csv file to then use in analyses to extract climate data under the next Rmarkdown "...."
+
+```{r}
+write.csv(floweringdata, "floweringdatawithminimumdate.csv")
+```
+
+Done :)
+
+
